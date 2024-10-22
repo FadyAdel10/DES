@@ -2,6 +2,9 @@
 using namespace std;
 #include <string>
 #include <math.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<sys/stat.h>
 
 uint64_t PC_1(uint64_t input) {
     uint64_t pc1[] = {
@@ -314,8 +317,88 @@ uint64_t DES_Decryption(uint64_t cipherText,uint64_t key){
     return planeText;
 }
 
-int main()
+unsigned char* load_file(const char *fn, int *len)
 {
+ struct stat info={0};
+ int ret=stat(fn, &info);
+ if(ret)//inaccessible
+  return 0;
+ FILE *fsrc=fopen(fn, "rb");
+ if(!fsrc)//inaccessible
+  return 0;
+ unsigned char * data=(unsigned char *)malloc(info.st_size);//remember to free(data) at the end
+ if(!data)//out of memory
+ {
+  exit(1);
+  return 0;
+ }
+ size_t nread=fread(data, 1, info.st_size, fsrc);
+ fclose(fsrc);
+ *len=(int)nread;
+ return data;
+}
+
+//Use this code to write files:
+int save_file(const char *fn, unsigned char *data, int len)
+{
+ FILE *fdst=fopen(fn, "wb");
+ if(!fdst)
+  return 0;
+ fwrite(data, 1, len, fdst);
+ fclose(fdst);
+ return 1;
+}
+
+int main(int argc, char **argv)
+{
+ //Start
+    //TODO: convert unsigned char * to uint64_t
+/*
+ // Check the number of argc
+    if (argc != 5) {
+        fprintf(stderr, "Error: You must provide exactly 4 arguments.\n");
+        return 1; 
+    }
+
+    int len2 = 0;     //for second argument which is the key
+    int len3 = 0;     //for third arguemnt which is either plaintext or cipher
+    unsigned char *key = load_file(argv[2],&len2);
+    unsigned char *inputtext = load_file(argv[3],&len3);
+    
+    if (argv[1][0] == 'e') {
+    //encryption
+    
+    //uint64_t cipherText = DES_encryption(//plaintext,//key);
+    //save_file function
+    if(save_file(argv[4], //result, //len))
+        printf("decrypted and saved safely");
+    else{
+        printf("failed");
+        return 1;
+    }
+    }
+    
+    else if (argv[1][0] == 'd') {
+    //decryption
+
+    //uint64_t cipherText = DES_Decryption(//plaintext,//key);
+    //save_file function
+    if(save_file(argv[4], //result, //len))
+        printf("decrypted and saved safely");
+    else{
+        printf("failed");
+        return 1;
+    }
+    }
+    
+    else{
+        //invalid mode
+        fprintf(stderr, "Error: Invalid mode. The first argument is neither 'e' nor 'd'.\n");
+        return 1; 
+    }
+
+    */
+    //End
     uint64_t cipherText = DES_encryption(0xFEDCBA987654321,0x133457799BBCDFF1);
     cout<<cipherText<<endl;
     cout<<DES_Decryption(cipherText,0x133457799BBCDFF1)<<endl;
