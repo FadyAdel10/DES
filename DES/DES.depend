@@ -1,6 +1,7 @@
 # depslib dependency file v1.0
-1728951840 source:d:\faculty\fall2025\cyber_security\projects\des\des\des\main.cpp
-	<iostream>
-	<string>
-	<math.h>
+1730070469 source:c:\users\sigma\desktop\security'\des_new\des\main.c
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+	<sys/stat.h>
 

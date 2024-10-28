@@ -1,2 +1,0 @@
-# DES
-DES implementation project
