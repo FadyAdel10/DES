@@ -1,7 +1,0 @@
-# depslib dependency file v1.0
-1730070469 source:c:\users\sigma\desktop\security'\des_new\des\main.c
-	<stdio.h>
-	<stdlib.h>
-	<stdint.h>
-	<sys/stat.h>
-

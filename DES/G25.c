@@ -276,34 +276,19 @@ uint64_t DES_Decryption(uint64_t cipherText,uint64_t key) {
     return planeText;
 }
 
-void converter_1024_to_64_bit_blocks(unsigned char input_data[1024], uint64_t output_data[128])
-{
-    for(uint64_t i = 0; i < 128; i++)
-    {
-        for(uint64_t j = 0; j < 8; j++)
-        {
-            output_data[i] |= ((uint64_t)input_data[(i * 8) + j] << (j * 8));
-        }
+uint64_t bytes_to_uint64(unsigned char* bytes) {
+    uint64_t result = 0;
+    for(int i = 0; i < 8; i++) {
+        result = (result << 8) | bytes[i];
     }
+    return result;
 }
-void converter_64_bit_blocks_to_1024(uint64_t input_data[128] ,unsigned char output_data[1024])
-{
-    for(int i = 0; i < 128; i++)
-    {
-        for(int j = 0; j < 8; j++)
-        {
-                output_data[(i * 8)+j]=(input_data[i]>>(j * 8))&(0xff);
-        }
+
+void uint64_to_bytes(uint64_t val, unsigned char* bytes) {
+    for(int i = 7; i >= 0; i--) {
+        bytes[i] = val & 0xFF;
+        val >>= 8;
     }
-}
-uint64_t read_key_from_inputFile(unsigned char textKey[8])
-{
-    uint64_t key=0;
-     for(uint64_t j = 0; j < 8; j++)
-     {
-         key |= ((uint64_t)textKey[j] << (j * 8));
-     }
-     return key;
 }
 
 unsigned char* load_file(const char *fn, int *len) {
@@ -346,57 +331,37 @@ int save_file(const char *fn, unsigned char *data, int len) {
     return 1;
 }
 
+
+
 int main(int argc, char **argv) {
+    //Reading input from CLI
     char x = argv[1][0];
     unsigned char *keyFileName = argv[2];
-    unsigned char *plainTextFileName = argv[3];
-    unsigned char *cipherFileName = argv[4];
-    //printf("%s %s \n",key_data,plainText_data);
-    if(x == 'e'){
-        int key_size = 0;
-        unsigned char *key_text = load_file(keyFileName,&key_size);
-        int plainText_size = 0;
-        unsigned char *plainText = load_file(plainTextFileName,&plainText_size);
-        printf("key entered : %s , key_size : %i\nplaintext entered : %s , plaintext_size : %i",key_text,key_size,plainText,plainText_size);
-        //save_file(cipherFileName,"thisIsTheCipher2",plainText_size);
-        uint64_t cipher_blocks[128]={0};
-        uint64_t plainText_blocks[128]={0};
-        converter_1024_to_64_bit_blocks(plainText,plainText_blocks);
-        uint64_t key_binary = read_key_from_inputFile(key_text);
-        for(int i=0;i<128;i++){
-            cipher_blocks[i] = DES_encryption(plainText_blocks[i],key_binary);
+    unsigned char *file1Name = argv[3];
+    unsigned char *file2Name = argv[4];
+    //Loading key
+    int key_size = 0;
+    unsigned char *key_text = load_file(keyFileName,&key_size);
+    //Loading file1 Content (plaintext if e ciphertext if d)
+    int file1_size = 0;
+    unsigned char *file1Text = load_file(file1Name,&file1_size);
+    uint64_t key = bytes_to_uint64(key_text);
+    int output_len = ((file1_size + 7) / 8) * 8;
+    unsigned char* output_data = (unsigned char*)malloc(output_len);
+    for(int i = 0; i < file1_size; i += 8) {
+        unsigned char block[8] = {0};
+        int block_size = (file1_size - i < 8) ? file1_size - i : 8;
+        memcpy(block, file1Text + i, block_size);
+        uint64_t block_val = bytes_to_uint64(block);
+        uint64_t result = 0;
+        if(x == 'e'){
+            result = DES_encryption(block_val,key);
         }
-        unsigned char cipher_text[1024]={0};
-        converter_64_bit_blocks_to_1024(cipher_blocks,cipher_text);
-        save_file(cipherFileName,cipher_text,plainText_size);
-    }
-    //Decryption
-    else{
-
-    }
-    /*
-    //uint64_t cipherText = DES_encryption(0xFEDCBA987654321,0x133457799BBCDFF1);
-    uint64_t cipherText = DES_encryption(0x0123456789ABCDEF,0x133457799BBCDFF1);
-    printf("%llu\n", cipherText);
-    printf("%llu\n", DES_Decryption(cipherText,0x133457799BBCDFF1));
-    char x[100];
-    scanf("%s", x);
-    uint64_t res=0;
-    int sizee = (strlen(x)%8==0)? (strlen(x)/8):((strlen(x)/8)+1);
-    uint64_t *blocks_of_plaintext = (uint64_t*)malloc(sizee * sizeof(uint64_t));
-    for(int i=0;i<strlen(x);i++) {
-        res |= ((uint64_t)x[i])<<((7-i)*8);
-        if(i!=0 && (i+1)%8==0) {
-            blocks_of_plaintext[(i+1)/8] = res;
-            res=0;
+        else{
+            result = DES_Decryption(block_val,key);
         }
+        uint64_to_bytes(result, output_data + i);
     }
-    for(int i=0;i<sizee;i++) {
-        printf("%llu\n", DES_encryption(blocks_of_plaintext[i],0x133457799BBCDFF1));
-        printf("%llu\n", DES_Decryption(DES_encryption(blocks_of_plaintext[i],0x133457799BBCDFF1),0x133457799BBCDFF1));
-    }
-    free(blocks_of_plaintext);
-    return 0;
-    */
+    save_file(file2Name, output_data, output_len);
 }
 
