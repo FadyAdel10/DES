@@ -3,12 +3,17 @@
 #include <stdint.h>
 #include <sys/stat.h>
 /*
-    Inputs
-        Key: char array
-        plaintext: char array
-    Outputs:
-        ciphertext: char array
+                 Name                 ID
+        ------------------------------------
+        | Fady Adel Botros       | 2001388 |
+        | Ahmed Ayman AbdElFatah | 2000128 |
+        | Ahmed Mohamed Atwa     | 2001391 |
+        | Ahmed Sherif Mohamed   | 2001547 |
+        | Omar Nader Ahmed Gamal | 2001714 |
+        ------------------------------------
 */
+
+//Permuted Choice 1
 uint64_t PC_1(uint64_t input) {
     uint64_t pc1[] = {
         57, 49, 41, 33, 25, 17, 9,
@@ -28,6 +33,7 @@ uint64_t PC_1(uint64_t input) {
     return output;
 }
 
+//Permuted Choice 2
 uint64_t pc_2(uint64_t C,uint64_t D) {
     uint64_t input = (C << 28) | (D);
     uint64_t pc2[] = {
@@ -48,6 +54,7 @@ uint64_t pc_2(uint64_t C,uint64_t D) {
     return output;
 }
 
+//Initial Permutation
 uint64_t initial_Permutation(uint64_t input) {
     const int IP[64] = {
         58, 50, 42, 34, 26, 18, 10, 2,
@@ -66,6 +73,7 @@ uint64_t initial_Permutation(uint64_t input) {
     return output;
 }
 
+//Expansion Permutation
 uint64_t expansion_permutation(uint64_t input){
     int e_table[] = {
         32, 1, 2, 3, 4, 5,
@@ -84,6 +92,7 @@ uint64_t expansion_permutation(uint64_t input){
     return output;
 }
 
+//Substitution Choice
 uint64_t substitution_choice(uint64_t input){
     int s[8][4][16] = {
         { {14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7},
@@ -129,6 +138,7 @@ uint64_t substitution_choice(uint64_t input){
     return output;
 }
 
+//Left Circular Shift
 uint64_t left_shift(uint64_t input , uint64_t no_of_round){
     uint64_t output = 0;
     uint64_t amount_of_shift=2;
@@ -150,6 +160,7 @@ uint64_t left_shift(uint64_t input , uint64_t no_of_round){
     return output;
 }
 
+//Expansion/Permutation
 uint64_t round_permutation(uint64_t input){
     int P[] = {
         16, 7, 20, 21,
@@ -168,6 +179,7 @@ uint64_t round_permutation(uint64_t input){
     return output;
 }
 
+//Inverse Initial Permutation
 uint64_t inverse_initial_Permutation(uint64_t input) {
     int ip[] = {
         40, 8, 48, 16, 56, 24, 64, 32,
@@ -186,16 +198,19 @@ uint64_t inverse_initial_Permutation(uint64_t input) {
     return output;
 }
 
+//32-bit swap
 uint64_t swap_32(uint64_t L16 ,uint64_t R16){
     uint64_t output = 0;
     output = (L16) | (R16<<32);
     return output;
 }
 
+//Normal Xor
 uint64_t Xor(uint64_t input1 ,uint64_t input2){
     return input1 ^ input2;
 }
 
+//F-Function inside each round
 uint64_t F_function(uint64_t Ri_1 , uint64_t Ki){
     uint64_t temp1 = expansion_permutation(Ri_1);
     uint64_t temp2 = Xor(temp1,Ki);
@@ -204,7 +219,8 @@ uint64_t F_function(uint64_t Ri_1 , uint64_t Ki){
     return output;
 }
 
-uint64_t* round(uint64_t Li_1,uint64_t Ri_1,uint64_t Ci_1,uint64_t Di_1,uint64_t round_no){
+//whole round process encryption
+uint64_t* encrypt_round(uint64_t Li_1,uint64_t Ri_1,uint64_t Ci_1,uint64_t Di_1,uint64_t round_no){
     uint64_t Li = Ri_1;
     uint64_t Ci = left_shift(Ci_1,round_no);
     uint64_t Di = left_shift(Di_1,round_no);
@@ -218,6 +234,7 @@ uint64_t* round(uint64_t Li_1,uint64_t Ri_1,uint64_t Ci_1,uint64_t Di_1,uint64_t
     return round_result;
 }
 
+//Encrypt 64-bit block
 uint64_t DES_encryption(uint64_t plain_text,uint64_t key) {
     uint64_t temp1 = initial_Permutation(plain_text);
     uint64_t Li_1 = temp1 >> 32;
@@ -227,7 +244,7 @@ uint64_t DES_encryption(uint64_t plain_text,uint64_t key) {
     uint64_t Di_1 = sub_key & 0xfffffff;
 
     for(int i=1; i<=16 ;i++) {
-        uint64_t *round_output = round(Li_1,Ri_1,Ci_1,Di_1,i);
+        uint64_t *round_output = encrypt_round(Li_1,Ri_1,Ci_1,Di_1,i);
         Li_1 = round_output[0];
         Ri_1 = round_output[1];
         Ci_1 = round_output[2];
@@ -238,6 +255,7 @@ uint64_t DES_encryption(uint64_t plain_text,uint64_t key) {
     return cipher_text;
 }
 
+//Get key components for decryption
 uint64_t* get_decryption_keys(uint64_t key) {
     uint64_t sub_key = PC_1(key);
     uint64_t Ci_1 = sub_key >> 28;
@@ -251,6 +269,7 @@ uint64_t* get_decryption_keys(uint64_t key) {
     return keys;
 }
 
+//whole round process decryption
 uint64_t* round_decryption(uint64_t Li_1,uint64_t Ri_1,uint64_t Ki) {
     uint64_t Ri = Xor(Li_1,F_function(Ri_1,Ki));
     uint64_t Li = Ri_1;
@@ -260,6 +279,7 @@ uint64_t* round_decryption(uint64_t Li_1,uint64_t Ri_1,uint64_t Ki) {
     return round_result;
 }
 
+//Decrypt 64-bit block
 uint64_t DES_Decryption(uint64_t cipherText,uint64_t key) {
     uint64_t temp1 = initial_Permutation(cipherText);
     uint64_t Li_1 = temp1 >> 32;
@@ -275,6 +295,7 @@ uint64_t DES_Decryption(uint64_t cipherText,uint64_t key) {
     uint64_t planeText = inverse_initial_Permutation(swap_32(Li_1,Ri_1));
     return planeText;
 }
+
 
 uint64_t bytes_to_uint64(unsigned char* bytes) {
     uint64_t result = 0;
@@ -292,34 +313,23 @@ void uint64_to_bytes(uint64_t val, unsigned char* bytes) {
 }
 
 unsigned char* load_file(const char *fn, int *len) {
-    //printf("I entered load_file_function \n");
     struct stat info={0};
     int ret = stat(fn, &info);
-    //printf("ret = %d \n",ret);
     if(ret){
-        //printf("I entered ret \n");
          return 0;
     }
     FILE *fsrc = fopen(fn, "rb");
     if(!fsrc){
-            //printf("I entered fsrc \n");
             return 0;
     }
-    //printf("info.st_size %d \n",info.st_size);
     unsigned char * data = (unsigned char *)malloc(info.st_size);
     if(!data) {
-        //printf("I entered");
         exit(1);
         return 0;
     }
-    //printf("data : %s \n",data);
     size_t nread = fread(data, 1, info.st_size, fsrc);
-    //printf("data : %s \n",data);
-    //printf("before fclose \n");
     fclose(fsrc);
-    //printf("after fclose \n");
     *len=(int)nread;
-    //printf("data retrieved : %s",data);
     return data;
 }
 
@@ -330,8 +340,6 @@ int save_file(const char *fn, unsigned char *data, int len) {
     fclose(fdst);
     return 1;
 }
-
-
 
 int main(int argc, char **argv) {
     //Reading input from CLI
@@ -345,9 +353,12 @@ int main(int argc, char **argv) {
     //Loading file1 Content (plaintext if e ciphertext if d)
     int file1_size = 0;
     unsigned char *file1Text = load_file(file1Name,&file1_size);
+    //Change input key to uint64
     uint64_t key = bytes_to_uint64(key_text);
+    //padding output length to be divisible by 8 thus converting to 64bit block
     int output_len = ((file1_size + 7) / 8) * 8;
     unsigned char* output_data = (unsigned char*)malloc(output_len);
+    //Iterating Over the input , generating blocks of size 64bit , encrypt or decrypt blocks
     for(int i = 0; i < file1_size; i += 8) {
         unsigned char block[8] = {0};
         int block_size = (file1_size - i < 8) ? file1_size - i : 8;
